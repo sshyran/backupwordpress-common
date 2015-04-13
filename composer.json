@@ -1,0 +1,12 @@
+{
+    "name": "humanmade/bwp-common",
+    "description": "Common code library for BackUpWordPress addons",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Human Made Limited",
+            "email": "hello@hmn.md"
+        }
+    ],
+    "require": {}
+}
