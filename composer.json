@@ -1,6 +1,11 @@
 {
     "name": "humanmade/bwp-common",
     "description": "Common code library for BackUpWordPress addons",
+    "keywords"   : [
+        "wordpress",
+        "backup"
+    ],
+    "type"       : "wordpress-plugin",
     "license": "MIT",
     "authors": [
         {
@@ -8,5 +13,8 @@
             "email": "hello@hmn.md"
         }
     ],
-    "require": {}
+    "require": {},
+    "support"    : {
+    	"issues": "https://github.com/humanmade/BackUpWordPress-Common/issues"
+    },
 }
