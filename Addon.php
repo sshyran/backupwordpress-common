@@ -52,14 +52,14 @@ class Addon {
 	/**
 	 * Self deactivate ourself if incompatibility found.
 	 */
-	public function maybe_self_deactivate() {
+	public static function maybe_self_deactivate() {
 
-		if ( $this->meets_requirements() ) {
+		if ( self::meets_requirements() ) {
 			return;
 		}
 
-		deactivate_plugins( plugin_basename( __FILE__ ) );
-		add_action( 'admin_notices', array( $this, 'display_admin_notices' ) );
+		deactivate_plugins( 'backupwordpress-pro-dreamobjects/backupwordpress-pro-dreamobjects.php' );
+		add_action( 'admin_notices', array( __CLASS__, 'display_admin_notices' ) );
 
 		if ( isset( $_GET['activate'] ) ) {
 			unset( $_GET['activate'] );
@@ -70,7 +70,7 @@ class Addon {
 	/**
 	 * Displays a user friendly message in the WordPress admin.
 	 */
-	public function display_admin_notices() {
+	public static function display_admin_notices() {
 
 		echo '<div class="error"><p>' . esc_html( self::get_notice_message() ) . '</p></div>';
 
@@ -102,8 +102,6 @@ class Addon {
 			return false;
 		}
 
-		$bwp = Plugin::get_instance();
-
 		if ( version_compare( Plugin::PLUGIN_VERSION, $this->min_bwp_version, '<' ) ) {
 			$this->notice = __( '%1$s requires BackUpWordPress version %2$s. Please install or update it first.', 'backupwordpress' );
 			return false;
@@ -111,6 +109,5 @@ class Addon {
 
 		return true;
 	}
-
 
 }
