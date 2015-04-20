@@ -17,10 +17,11 @@ class Addon {
 
 	protected $requirements;
 
-	protected $notice;
+	protected $notice = '';
 
-	protected $service_class;
-	protected $bwp;
+	protected $service_class = '';
+
+	protected $edd_download_file_name = '';
 
 	/**
 	 * Instantiates a new Plugin object
@@ -29,14 +30,14 @@ class Addon {
 	 * @param $min_bwp_version
 	 * @param $license_status
 	 */
-	public function __construct( $plugin_version, $min_bwp_version, $service_class, $bwp ) {
+	public function __construct( $plugin_version, $min_bwp_version, $service_class, $edd_download_file_name ) {
 
 		add_action( 'admin_init', array( $this, 'maybe_self_deactivate' ) );
 
 		$this->plugin_version = $plugin_version;
 		$this->min_bwp_version = $min_bwp_version;
 		$this->service_class = $service_class;
-		$this->bwp = $bwp;
+		$this->edd_download_file_name = $edd_download_file_name;
 	}
 
 	public function register( $path ) {
@@ -52,14 +53,14 @@ class Addon {
 	/**
 	 * Self deactivate ourself if incompatibility found.
 	 */
-	public static function maybe_self_deactivate() {
+	public function maybe_self_deactivate() {
 
-		if ( self::meets_requirements() ) {
+		if ( $this->meets_requirements() ) {
 			return;
 		}
 
 		deactivate_plugins( 'backupwordpress-pro-dreamobjects/backupwordpress-pro-dreamobjects.php' );
-		add_action( 'admin_notices', array( __CLASS__, 'display_admin_notices' ) );
+		add_action( 'admin_notices', array( $this, 'display_admin_notices' ) );
 
 		if ( isset( $_GET['activate'] ) ) {
 			unset( $_GET['activate'] );
@@ -70,9 +71,9 @@ class Addon {
 	/**
 	 * Displays a user friendly message in the WordPress admin.
 	 */
-	public static function display_admin_notices() {
+	public function display_admin_notices() {
 
-		echo '<div class="error"><p>' . esc_html( self::get_notice_message() ) . '</p></div>';
+		echo '<div class="error"><p>' . esc_html( $this->get_notice_message() ) . '</p></div>';
 
 	}
 
