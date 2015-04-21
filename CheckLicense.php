@@ -32,13 +32,12 @@ class CheckLicense {
 	/**
 	 * Instantiate a new object.
 	 */
-	public function __construct( $plugin_settings, $edd_download_file_name, $transient_name, Addon $plugin, PluginUpdater $updater, $prefix ) {
+	public function __construct( $plugin_settings, $edd_download_file_name, Addon $plugin, PluginUpdater $updater, $prefix ) {
 
 		add_action( 'backupwordpress_loaded', array( $this, 'init' ) );
 
 		$this->plugin_settings = $plugin_settings;
 		$this->edd_download_file_name = $edd_download_file_name;
-		$this->transient_name = $transient_name;
 
 		$this->plugin = $plugin;
 
@@ -104,11 +103,11 @@ class CheckLicense {
 
 		$notices = array();
 
-		if ( $this->is_license_expired( $license_data->license ) ) {
-			$notices[] = sprintf( __( 'Your %s license expired on %s, renew it now to continue to receive updates and support. Thanks!', 'backupwordpress' ), $this->edd_download_file_name, $license_data->expires );
+		if ( $this->is_license_expired( $license_data['expiry_date'] ) ) {
+			$notices[] = sprintf( __( 'Your %s license expired on %s, renew it now to continue to receive updates and support. Thanks!', 'backupwordpress' ), $this->edd_download_file_name, $license_data['expiry_date'] );
 		}
 
-		if ( $this->is_license_invalid( $license_data->license ) ) {
+		if ( $this->is_license_invalid( $license_data['license_status'] ) ) {
 			$notices[] = sprintf( __( 'Your %s license is invalid, please double check it now to continue to receive updates and support. Thanks!', 'backupwordpress' ), $this->edd_download_file_name );
 		}
 
@@ -130,9 +129,9 @@ class CheckLicense {
 	 *
 	 * @return bool True if 'expired'
 	 */
-	public function is_license_expired( $license_status ) {
+	public function is_license_expired( $expiry_date ) {
 
-		return ( 'expired' === $license_status );
+		return ( strtotime( 'now' ) > strtotime( $expiry_date ) );
 	}
 
 	/**
@@ -157,7 +156,11 @@ class CheckLicense {
 	 */
 	public function is_license_inactive( $license_status ) {
 
-		return ( 'site_inactive' === $license_status );
+		return ( 'site_inactive' === $license_status || 'inactive' === $license_status );
+	}
+
+	public function is_license_valid( $license_status ) {
+		return 'valid' === $license_status;
 	}
 
 	/**
@@ -167,9 +170,9 @@ class CheckLicense {
 	 */
 	public function fetch_license_data( $key ) {
 
-		$license_data = get_transient( $this->transient_name );
+		$license_data = $this->fetch_settings();
 
-		if ( false === $license_data ) {
+		if ( 0 === strlen( trim( $license_data['license_key'] ) ) ) {
 
 			$api_params = array(
 				'edd_action' => 'check_license',
@@ -178,7 +181,7 @@ class CheckLicense {
 			);
 
 			// Call the custom API.
-			$response = wp_remote_get( $this->get_api_url( $api_params ), array( 'timeout'   => 15, 'sslverify' => false ) );
+			$response = wp_remote_get( $this->get_api_url( $api_params ), array( 'timeout' => 15, 'sslverify' => false ) );
 
 			if ( is_wp_error( $response ) ) {
 				return false;
@@ -188,15 +191,13 @@ class CheckLicense {
 
 			if ( ! $this->is_license_invalid( $license_data->license ) ) {
 
-				set_transient( $this->transient_name, $license_data, DAY_IN_SECONDS );
-
-				$this->update_settings( array( 'license_key' => $key, 'license_status' => $license_data->license, 'license_expired' => $this->is_license_expired( $license_data->license ) ) );
+				$this->update_settings( array( 'license_key' => $key, 'license_status' => $license_data->license, 'license_expired' => $this->is_license_expired( $license_data->license ), 'expiry_date' => $license_data->expires ) );
 
 			}
 
 		}
 
-		return $license_data;
+		return $this->fetch_settings();
 
 	}
 
@@ -223,7 +224,7 @@ class CheckLicense {
 		$settings = $this->fetch_settings();
 
 		// Return early if we have a valid license
-		if ( ! $this->is_license_invalid( $settings['license_key'] ) && ! $this->is_license_expired( $settings['license_expired'] ) ) {
+		if ( $this->is_license_valid( $settings['license_status'] ) ) {
 			return;
 		}
 
@@ -248,7 +249,7 @@ class CheckLicense {
 
 		$settings['license_status'] = $license_data->license;
 
-		if ( ! $this->is_license_expired( $license_data->expires ) ) {
+		if ( strtotime( 'now' ) < strtotime( $license_data->expires ) ) {
 			$settings['license_expired'] = false;
 		}
 
@@ -261,7 +262,7 @@ class CheckLicense {
 	 * @return mixed|void
 	 */
 	public function fetch_settings() {
-		return apply_filters( 'hmbkpp_aws_settings', get_option( $this->plugin_settings, array( 'license_key' => '', 'license_status' => '', 'license_expired' => false ) ) );
+		return apply_filters( $this->plugin_settings, get_option( $this->plugin_settings, array( 'license_key' => '', 'license_status' => '', 'license_expired' => false ) ) );
 	}
 
 	/**
@@ -276,7 +277,7 @@ class CheckLicense {
 	}
 
 	protected function clear_settings() {
-		return delete_option( $this->plugin_settings ) && delete_transient( $this->transient_name );
+		return delete_option( $this->plugin_settings );
 	}
 
 	/**

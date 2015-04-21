@@ -40,12 +40,6 @@ class Addon {
 		$this->edd_download_file_name = $edd_download_file_name;
 	}
 
-	public function register( $path ) {
-		require_once $path . $this->service_class . '.php';
-		Services::register( __FILE__, __NAMESPACE__ . '\\' . $this->service_class );
-
-	}
-
 	public function __get( $property ) {
 		return $this->$property;
 	}
