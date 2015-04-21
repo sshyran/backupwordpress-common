@@ -300,20 +300,6 @@ class CheckLicense {
 			return;
 		}
 
-		$notices = Notices::get_instance()->get_notices();
-
-		if ( ! empty( $notices['license_check'] ) ) : ?>
-
-			<div class="error">
-
-				<?php foreach ( $notices['license_check'] as $msg ) : ?>
-					<p><?php echo esc_html( $msg ); ?></p>
-				<?php endforeach; ?>
-
-			</div>
-
-		<?php endif; ?>
-
 		<div class="updated">
 
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
