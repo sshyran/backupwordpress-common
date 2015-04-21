@@ -4,13 +4,8 @@ use HM\BackUpWordPress\Notices;
 
 /**
  * Class CheckLicense
- * @package HM\BackUpWordPressS3
  */
 class CheckLicense {
-
-	const ACTION_HOOK = 'hmbkp_aws_license_key_submit';
-
-	const NONCE_FIELD = 'hmbkp_aws_license_key_submit_nonce';
 
 	/**
 	 * URL for the updater to ping for a new version.
@@ -26,14 +21,18 @@ class CheckLicense {
 
 	protected $edd_download_file_name = '';
 
-	protected $transient_name;
-
 	protected $plugin;
+
+	protected $prefix = '';
+
+	protected $action_hook = '';
+
+	protected $nonce_field = '';
 
 	/**
 	 * Instantiate a new object.
 	 */
-	public function __construct( $plugin_settings, $edd_download_file_name, $transient_name, Addon $plugin, PluginUpdater $updater ) {
+	public function __construct( $plugin_settings, $edd_download_file_name, $transient_name, Addon $plugin, PluginUpdater $updater, $prefix ) {
 
 		add_action( 'backupwordpress_loaded', array( $this, 'init' ) );
 
@@ -44,6 +43,12 @@ class CheckLicense {
 		$this->plugin = $plugin;
 
 		$this->updater = $updater;
+
+		$this->prefix = $prefix;
+
+		$this->action_hook = 'hmbkp_' . $this->prefix . '_license_key_submit';
+
+		$this->nonce_field = 'hmbkp_' . $this->prefix . '_license_key_submit_nonce';
 	}
 
 	public function __get( $property ) {
@@ -63,7 +68,7 @@ class CheckLicense {
 
 		}
 
-		add_action( 'admin_post_' . self::ACTION_HOOK, array( $this, 'license_key_submit' ) );
+		add_action( 'admin_post_' . $this->action_hook, array( $this, 'license_key_submit' ) );
 
 	}
 
@@ -318,9 +323,9 @@ class CheckLicense {
 
 				</p>
 
-				<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION_HOOK ); ?>"/>
+				<input type="hidden" name="action" value="<?php echo esc_attr( $this->action_hook ); ?>"/>
 
-				<?php wp_nonce_field( self::ACTION_HOOK, self::NONCE_FIELD ); ?>
+				<?php wp_nonce_field( $this->action_hook, $this->nonce_field ); ?>
 
 				<?php submit_button( __( 'Save license key', 'backupwordpress' ) ); ?>
 
@@ -335,7 +340,7 @@ class CheckLicense {
 	 */
 	public function license_key_submit() {
 
-		check_admin_referer( self::ACTION_HOOK, self::NONCE_FIELD );
+		check_admin_referer( $this->action_hook, $this->nonce_field );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_safe_redirect( wp_get_referer() );
