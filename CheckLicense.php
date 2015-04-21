@@ -103,12 +103,10 @@ class CheckLicense {
 
 		$notices = array();
 
-		if ( $this->is_license_expired( $license_data['expiry_date'] ) ) {
-			$notices[] = sprintf( __( 'Your %s license expired on %s, renew it now to continue to receive updates and support. Thanks!', 'backupwordpress' ), $this->edd_download_file_name, $license_data['expiry_date'] );
-		}
-
 		if ( $this->is_license_invalid( $license_data['license_status'] ) ) {
 			$notices[] = sprintf( __( 'Your %s license is invalid, please double check it now to continue to receive updates and support. Thanks!', 'backupwordpress' ), $this->edd_download_file_name );
+		}  elseif ( $this->is_license_expired( $license_data['expiry_date'] ) ) {
+			$notices[] = sprintf( __( 'Your %s license expired on %s, renew it now to continue to receive updates and support. Thanks!', 'backupwordpress' ), $this->edd_download_file_name, $license_data['expiry_date'] );
 		}
 
 		if ( ! empty( $notices ) ) {
@@ -189,11 +187,7 @@ class CheckLicense {
 
 			$license_data = json_decode( wp_remote_retrieve_body( $response ) );
 
-			if ( ! $this->is_license_invalid( $license_data->license ) ) {
-
 				$this->update_settings( array( 'license_key' => $key, 'license_status' => $license_data->license, 'license_expired' => $this->is_license_expired( $license_data->license ), 'expiry_date' => $license_data->expires ) );
-
-			}
 
 		}
 
@@ -262,7 +256,7 @@ class CheckLicense {
 	 * @return mixed|void
 	 */
 	public function fetch_settings() {
-		return apply_filters( $this->plugin_settings, get_option( $this->plugin_settings, array( 'license_key' => '', 'license_status' => '', 'license_expired' => false ) ) );
+		return apply_filters( $this->plugin_settings, get_option( $this->plugin_settings, array( 'license_key' => '', 'license_status' => '', 'license_expired' => false, 'expiry_date' => '' ) ) );
 	}
 
 	/**
@@ -349,6 +343,8 @@ class CheckLicense {
 
 		if ( $this->validate_key( $key ) ) {
 			$this->activate_license();
+		} else {
+			$this->clear_settings();
 		}
 
 		wp_safe_redirect( wp_get_referer() );
