@@ -187,7 +187,7 @@ class CheckLicense {
 
 			$license_data = json_decode( wp_remote_retrieve_body( $response ) );
 
-				$this->update_settings( array( 'license_key' => $key, 'license_status' => $license_data->license, 'license_expired' => $this->is_license_expired( $license_data->license ), 'expiry_date' => $license_data->expires ) );
+				$this->update_settings( array( 'license_key' => $key, 'license_status' => $license_data->license, 'license_expired' => $this->is_license_expired( $license_data->expires ), 'expiry_date' => $license_data->expires ) );
 
 		}
 
