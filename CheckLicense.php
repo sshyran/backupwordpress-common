@@ -125,7 +125,7 @@ class CheckLicense {
 	 *
 	 * @param $license_status
 	 *
-	 * @return bool True if 'expired'
+	 * @return bool True if expiry date is < than today.
 	 */
 	public function is_license_expired( $expiry_date ) {
 
@@ -170,7 +170,11 @@ class CheckLicense {
 
 		$license_data = $this->fetch_settings();
 
-		if ( 0 === strlen( trim( $license_data['license_key'] ) ) ) {
+		$is_first_activation = ( 0 === strlen( trim( $license_data['license_key'] ) ) );
+
+		$is_check_time = ( false === ( get_transient( 'hmbkp_daily_license_check' ) ) );
+
+		if ( $is_first_activation || $is_check_time ) {
 
 			$api_params = array(
 				'edd_action' => 'check_license',
@@ -187,7 +191,9 @@ class CheckLicense {
 
 			$license_data = json_decode( wp_remote_retrieve_body( $response ) );
 
-				$this->update_settings( array( 'license_key' => $key, 'license_status' => $license_data->license, 'license_expired' => $this->is_license_expired( $license_data->expires ), 'expiry_date' => $license_data->expires ) );
+			$this->update_settings( array( 'license_key' => $key, 'license_status' => $license_data->license, 'license_expired' => $this->is_license_expired( $license_data->expires ), 'expiry_date' => $license_data->expires ) );
+
+			set_transient( 'hmbkp_daily_license_check', true, DAY_IN_SECONDS );
 
 		}
 
