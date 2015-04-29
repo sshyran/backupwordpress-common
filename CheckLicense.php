@@ -2,360 +2,379 @@
 
 use HM\BackUpWordPress\Notices;
 
-/**
- * Class CheckLicense
- */
-class CheckLicense {
-
+if ( ! class_exists( 'CheckLicense' ) ) {
 	/**
-	 * URL for the updater to ping for a new version.
+	 * Class CheckLicense
 	 */
-	const EDD_STORE_URL = 'https://bwp.hmn.md';
+	class CheckLicense {
 
-	/**
-	 * Required by EDD licensing plugin API.
-	 */
-	const EDD_PLUGIN_AUTHOR = 'Human Made Limited';
+		/**
+		 * URL for the updater to ping for a new version.
+		 */
+		const EDD_STORE_URL = 'https://bwp.hmn.md';
 
-	protected $plugin_settings = '';
+		/**
+		 * Required by EDD licensing plugin API.
+		 */
+		const EDD_PLUGIN_AUTHOR = 'Human Made Limited';
 
-	protected $edd_download_file_name = '';
+		protected $plugin_settings = '';
 
-	protected $plugin;
+		protected $edd_download_file_name = '';
 
-	protected $prefix = '';
+		protected $plugin;
 
-	protected $action_hook = '';
+		protected $prefix = '';
 
-	protected $nonce_field = '';
+		protected $action_hook = '';
 
-	/**
-	 * Instantiate a new object.
-	 */
-	public function __construct( $plugin_settings, $edd_download_file_name, Addon $plugin, PluginUpdater $updater, $prefix ) {
+		protected $nonce_field = '';
 
-		add_action( 'backupwordpress_loaded', array( $this, 'init' ) );
+		/**
+		 * Instantiate a new object.
+		 *
+		 * @param $plugin_settings
+		 * @param $edd_download_file_name
+		 * @param Addon $plugin
+		 * @param PluginUpdater $updater
+		 * @param $prefix
+		 */
+		public function __construct( $plugin_settings, $edd_download_file_name, Addon $plugin, PluginUpdater $updater, $prefix ) {
 
-		$this->plugin_settings = $plugin_settings;
-		$this->edd_download_file_name = $edd_download_file_name;
+			add_action( 'backupwordpress_loaded', array( $this, 'init' ) );
 
-		$this->plugin = $plugin;
+			$this->plugin_settings = $plugin_settings;
+			$this->edd_download_file_name = $edd_download_file_name;
 
-		$this->updater = $updater;
+			$this->plugin = $plugin;
 
-		$this->prefix = $prefix;
+			$this->updater = $updater;
 
-		$this->action_hook = 'hmbkp_' . $this->prefix . '_license_key_submit';
+			$this->prefix = $prefix;
 
-		$this->nonce_field = 'hmbkp_' . $this->prefix . '_license_key_submit_nonce';
-	}
+			$this->action_hook = 'hmbkp_' . $this->prefix . '_license_key_submit';
 
-	public function __get( $property ) {
-		return $this->$property;
-	}
+			$this->nonce_field = 'hmbkp_' . $this->prefix . '_license_key_submit_nonce';
+		}
 
-	/**
-	 * Checks the stored key on load and if it's not valid, present the license form.
-	 */
-	public function init() {
+		/**
+		 * Generic property accessor.
+		 *
+		 * @param $property
+		 *
+		 * @return mixed
+		 */
+		public function __get( $property ) {
+			return $this->$property;
+		}
 
-		$settings = $this->fetch_settings();
+		/**
+		 * Checks the stored key on load and if it's not valid, present the license form.
+		 */
+		public function init() {
 
-		if ( ( empty( $settings['license_key'] ) ) || false === $this->validate_key( $settings['license_key'] ) ) {
+			$settings = $this->fetch_settings();
 
-			add_action( 'all_admin_notices', array( $this, 'display_license_form' ) );
+			if ( ( empty( $settings['license_key'] ) ) || false === $this->validate_key( $settings['license_key'] ) ) {
+
+				add_action( 'all_admin_notices', array( $this, 'display_license_form' ) );
+
+			}
+
+			add_action( 'admin_post_' . $this->action_hook, array( $this, 'license_key_submit' ) );
 
 		}
 
-		add_action( 'admin_post_' . $this->action_hook, array( $this, 'license_key_submit' ) );
+		/**
+		 * Sets up the EDD licensing check.
+		 */
+		protected function plugin_updater() {
 
-	}
+			// Retrieve our license key from the DB
+			$settings = $this->fetch_settings();
 
-	/**
-	 * Sets up the EDD licensing check.
-	 */
-	protected function plugin_updater() {
+			$license_key = $settings['license_key'];
 
-		// Retrieve our license key from the DB
-		$settings = $this->fetch_settings();
+			// Setup the updater
+			$this->updater->init( self::EDD_STORE_URL, __FILE__, array(
+					'version'   => $this->plugin->plugin_version, // current version number
+					'license'   => $license_key, // license key (used get_option above to retrieve from DB)
+					'item_name' => $this->edd_download_file_name, // name of this plugin
+					'author'    => self::EDD_PLUGIN_AUTHOR, // author of this plugin
+				)
+			);
 
-		$license_key = $settings['license_key'];
-
-		// Setup the updater
-		$this->updater->init( self::EDD_STORE_URL, __FILE__, array(
-				'version'   => $this->plugin->plugin_version, // current version number
-				'license'   => $license_key, // license key (used get_option above to retrieve from DB)
-				'item_name' => $this->edd_download_file_name, // name of this plugin
-				'author'    => self::EDD_PLUGIN_AUTHOR, // author of this plugin
-			)
-		);
-
-	}
-
-	/**
-	 * Check whether the provided license key is valid.
-	 *
-	 * @return bool
-	 */
-	protected function validate_key( $key ) {
-
-		$license_data = $this->fetch_license_data( $key );
-
-		$notices = array();
-
-		if ( $this->is_license_invalid( $license_data['license_status'] ) ) {
-			$notices[] = sprintf( __( 'Your %s license is invalid, please double check it now to continue to receive updates and support. Thanks!', 'backupwordpress' ), $this->edd_download_file_name );
-		}  elseif ( $this->is_license_expired( $license_data['expiry_date'] ) ) {
-			$notices[] = sprintf( __( 'Your %s license expired on %s, renew it now to continue to receive updates and support. Thanks!', 'backupwordpress' ), $this->edd_download_file_name, $license_data['expiry_date'] );
 		}
 
-		if ( ! empty( $notices ) ) {
+		/**
+		 * Check whether the provided license key is valid.
+		 *
+		 * @param $key
+		 *
+		 * @return bool
+		 */
+		protected function validate_key( $key ) {
 
-			Notices::get_instance()->set_notices( 'license_check', $notices );
+			$license_data = $this->fetch_license_data( $key );
 
-			return false;
+			$notices = array();
+
+			if ( $this->is_license_invalid( $license_data['license_status'] ) ) {
+				$notices[] = sprintf( __( 'Your %s license is invalid, please double check it now to continue to receive updates and support. Thanks!', 'backupwordpress' ), $this->edd_download_file_name );
+			}  elseif ( $this->is_license_expired( $license_data['expiry_date'] ) ) {
+				$notices[] = sprintf( __( 'Your %s license expired on %s, renew it now to continue to receive updates and support. Thanks!', 'backupwordpress' ), $this->edd_download_file_name, $license_data['expiry_date'] );
+			}
+
+			if ( ! empty( $notices ) ) {
+
+				Notices::get_instance()->set_notices( 'license_check', $notices );
+
+				return false;
+			}
+
+			return true;
+
 		}
 
-		return true;
+		/**
+		 * Checks whether the license key has expired.
+		 *
+		 * @param $license_status
+		 *
+		 * @return bool True if expiry date is < than today.
+		 */
+		public function is_license_expired( $expiry_date ) {
 
-	}
+			return ( strtotime( 'now' ) > strtotime( $expiry_date ) );
+		}
 
-	/**
-	 * Checks whether the license key has expired.
-	 *
-	 * @param $license_status
-	 *
-	 * @return bool True if expiry date is < than today.
-	 */
-	public function is_license_expired( $expiry_date ) {
+		/**
+		 * Checks whether the license key is valid.
+		 *
+		 * @param $license_status
+		 *
+		 * @return bool True if 'invalid'
+		 */
+		public function is_license_invalid( $license_status ) {
 
-		return ( strtotime( 'now' ) > strtotime( $expiry_date ) );
-	}
+			return ( 'invalid' === $license_status );
 
-	/**
-	 * Checks whether the license key is valid.
-	 *
-	 * @param $license_status
-	 *
-	 * @return bool True if 'invalid'
-	 */
-	public function is_license_invalid( $license_status ) {
+		}
 
-		return ( 'invalid' === $license_status );
+		/**
+		 * Determines whether the key was activated for this domain.
+		 *
+		 * @param $license_status
+		 *
+		 * @return bool True if 'site_inactive'
+		 */
+		public function is_license_inactive( $license_status ) {
 
-	}
+			return ( 'site_inactive' === $license_status || 'inactive' === $license_status );
+		}
 
-	/**
-	 * Determines whether the key was activated for this domain.
-	 *
-	 * @param $license_status
-	 *
-	 * @return bool True if 'site_inactive'
-	 */
-	public function is_license_inactive( $license_status ) {
+		public function is_license_valid( $license_status ) {
+			return 'valid' === $license_status;
+		}
 
-		return ( 'site_inactive' === $license_status || 'inactive' === $license_status );
-	}
+		/**
+		 * Fetches the plugin's license data either from the cache or from the EDD API.
+		 *
+		 * @param $key
+		 *
+		 * @return array|bool|mixed
+		 */
+		public function fetch_license_data( $key ) {
 
-	public function is_license_valid( $license_status ) {
-		return 'valid' === $license_status;
-	}
+			$license_data = $this->fetch_settings();
 
-	/**
-	 * Fetches the plugin's license data either from the cache or from the EDD API.
-	 *
-	 * @return array|bool|mixed
-	 */
-	public function fetch_license_data( $key ) {
+			$is_first_activation = ( 0 === strlen( trim( $license_data['license_key'] ) ) );
 
-		$license_data = $this->fetch_settings();
+			$is_check_time = ( false === ( get_site_transient( 'hmbkp_daily_license_check' ) ) );
 
-		$is_first_activation = ( 0 === strlen( trim( $license_data['license_key'] ) ) );
+			if ( $is_first_activation || $is_check_time ) {
 
-		$is_check_time = ( false === ( get_site_transient( 'hmbkp_daily_license_check' ) ) );
+				$api_params = array(
+					'edd_action' => 'check_license',
+					'license'    => $key,
+					'item_name'  => urlencode( $this->edd_download_file_name )
+				);
 
-		if ( $is_first_activation || $is_check_time ) {
+				// Call the custom API.
+				$response = wp_remote_get( $this->get_api_url( $api_params ), array( 'timeout' => 15, 'sslverify' => false ) );
 
+				if ( is_wp_error( $response ) ) {
+					return false;
+				}
+
+				$license_data = json_decode( wp_remote_retrieve_body( $response ) );
+
+				$this->update_settings( array( 'license_key' => $key, 'license_status' => $license_data->license, 'license_expired' => $this->is_license_expired( $license_data->expires ), 'expiry_date' => $license_data->expires ) );
+
+				set_site_transient( 'hmbkp_daily_license_check', true, DAY_IN_SECONDS );
+
+			}
+
+			return $this->fetch_settings();
+
+		}
+
+		/**
+		 * Builds the API call URL.
+		 *
+		 * @param $args
+		 *
+		 * @return string
+		 */
+		public function get_api_url( $args ) {
+
+			return add_query_arg( $args, self::EDD_STORE_URL );
+
+		}
+
+		/**
+		 * Posts the activate action to the EDD API. Will then set the license_status to 'active'
+		 *
+		 * @return bool|void
+		 */
+		public function activate_license() {
+
+			$settings = $this->fetch_settings();
+
+			// Return early if we have a valid license
+			if ( $this->is_license_valid( $settings['license_status'] ) ) {
+				return;
+			}
+
+			// data to send in our API request
 			$api_params = array(
-				'edd_action' => 'check_license',
-				'license'    => $key,
-				'item_name'  => urlencode( $this->edd_download_file_name )
+				'edd_action' => 'activate_license',
+				'license'    => $settings['license_key'],
+				'item_name'  => urlencode( $this->edd_download_file_name ), // the name of our product in EDD
+				'url'        => home_url()
 			);
 
 			// Call the custom API.
-			$response = wp_remote_get( $this->get_api_url( $api_params ), array( 'timeout' => 15, 'sslverify' => false ) );
+			$response = wp_remote_get( $this->get_api_url( $api_params ), array( 'timeout'   => 15, 'sslverify' => false ) );
 
+			// make sure the response came back okay
 			if ( is_wp_error( $response ) ) {
 				return false;
 			}
 
+			// decode the license data
 			$license_data = json_decode( wp_remote_retrieve_body( $response ) );
 
-			$this->update_settings( array( 'license_key' => $key, 'license_status' => $license_data->license, 'license_expired' => $this->is_license_expired( $license_data->expires ), 'expiry_date' => $license_data->expires ) );
+			$settings['license_status'] = $license_data->license;
 
-			set_site_transient( 'hmbkp_daily_license_check', true, DAY_IN_SECONDS );
+			if ( strtotime( 'now' ) < strtotime( $license_data->expires ) ) {
+				$settings['license_expired'] = false;
+			}
 
+			return $this->update_settings( $settings );
 		}
 
-		return $this->fetch_settings();
-
-	}
-
-	/**
-	 * Builds the API call URL.
-	 *
-	 * @param $args
-	 *
-	 * @return string
-	 */
-	public function get_api_url( $args ) {
-
-		return add_query_arg( $args, self::EDD_STORE_URL );
-
-	}
-
-	/**
-	 * Posts the activate action to the EDD API. Will then set the license_status to 'active'
-	 *
-	 * @return bool|void
-	 */
-	public function activate_license() {
-
-		$settings = $this->fetch_settings();
-
-		// Return early if we have a valid license
-		if ( $this->is_license_valid( $settings['license_status'] ) ) {
-			return;
+		/**
+		 * Fetch the settings from the database.
+		 *
+		 * @return mixed|void
+		 */
+		public function fetch_settings() {
+			return apply_filters( $this->plugin_settings, get_site_option( $this->plugin_settings, array( 'license_key' => '', 'license_status' => '', 'license_expired' => false, 'expiry_date' => '' ) ) );
 		}
 
-		// data to send in our API request
-		$api_params = array(
-			'edd_action' => 'activate_license',
-			'license'    => $settings['license_key'],
-			'item_name'  => urlencode( $this->edd_download_file_name ), // the name of our product in EDD
-			'url'        => home_url()
-		);
-
-		// Call the custom API.
-		$response = wp_remote_get( $this->get_api_url( $api_params ), array( 'timeout'   => 15, 'sslverify' => false ) );
-
-		// make sure the response came back okay
-		if ( is_wp_error( $response ) ) {
-			return false;
+		/**
+		 * Save the settings to the database.
+		 *
+		 * @param $data
+		 *
+		 * @return bool
+		 */
+		protected function update_settings( $data = array() ) {
+			return update_site_option( $this->plugin_settings, $data );
 		}
 
-		// decode the license data
-		$license_data = json_decode( wp_remote_retrieve_body( $response ) );
-
-		$settings['license_status'] = $license_data->license;
-
-		if ( strtotime( 'now' ) < strtotime( $license_data->expires ) ) {
-			$settings['license_expired'] = false;
+		protected function clear_settings() {
+			return delete_site_option( $this->plugin_settings );
 		}
 
-		return $this->update_settings( $settings );
-	}
+		/**
+		 * Display a form in the dashboard so the user can provide their license key.
+		 *
+		 */
+		public function display_license_form() {
 
-	/**
-	 * Fetch the settings from the database.
-	 *
-	 * @return mixed|void
-	 */
-	public function fetch_settings() {
-		return apply_filters( $this->plugin_settings, get_site_option( $this->plugin_settings, array( 'license_key' => '', 'license_status' => '', 'license_expired' => false, 'expiry_date' => '' ) ) );
-	}
+			$current_screen = get_current_screen();
 
-	/**
-	 * Save the settings to the database.
-	 *
-	 * @param $data
-	 *
-	 * @return bool
-	 */
-	protected function update_settings( $data = array() ) {
-		return update_site_option( $this->plugin_settings, $data );
-	}
+			if ( is_null( $current_screen ) ) {
+				return;
+			}
 
-	protected function clear_settings() {
-		return delete_site_option( $this->plugin_settings );
-	}
+			if ( ! defined( 'HMBKP_ADMIN_PAGE' ) ) {
+				return;
+			}
 
-	/**
-	 * Display a form in the dashboard so the user can provide their license key.
-	 *
-	 */
-	public function display_license_form() {
+			// TODO: remove suffix once it is added in BWP
+			$page = is_multisite() ? HMBKP_ADMIN_PAGE . '-network' : HMBKP_ADMIN_PAGE;
+			if ( $current_screen->id !== page ) {
+				return;
+			}
 
-		$current_screen = get_current_screen();
+			?>
 
-		if ( is_null( $current_screen ) ) {
-			return;
-		}
+			<div class="updated">
 
-		if ( ! defined( 'HMBKP_ADMIN_PAGE' ) ) {
-			return;
-		}
+				<form method="post" action="<?php echo esc_url( self_admin_url( 'admin-post.php' ) ); ?>">
 
-		// TODO: remove suffix once it is added in BWP
-		$page = is_multisite() ? HMBKP_ADMIN_PAGE . '-network' : HMBKP_ADMIN_PAGE;
-		if ( $current_screen->id !== page ) {
-			return;
-		}
+					<p>
+						<label style="vertical-align: baseline;" for="license_key"><?php printf( __( '%1$s%2$s is almost ready.%3$s Enter your license key to get updates and support.', 'backupwordpress' ), '<strong>', $this->edd_download_file_name, '</strong>' ); ?></label>
+						<input id="license_key" class="code regular-text" name="license_key" type="text" value=""/>
 
-		?>
+					</p>
 
-		<div class="updated">
+					<input type="hidden" name="action" value="<?php echo esc_attr( $this->action_hook ); ?>"/>
 
-			<form method="post" action="<?php echo esc_url( self_admin_url( 'admin-post.php' ) ); ?>">
+					<?php wp_nonce_field( $this->action_hook, $this->nonce_field ); ?>
 
-				<p>
-					<label style="vertical-align: baseline;" for="license_key"><?php printf( __( '%1$s%2$s is almost ready.%3$s Enter your license key to get updates and support.', 'backupwordpress' ), '<strong>', $this->edd_download_file_name, '</strong>' ); ?></label>
-					<input id="license_key" class="code regular-text" name="license_key" type="text" value=""/>
+					<?php submit_button( __( 'Save license key', 'backupwordpress' ) ); ?>
 
-				</p>
+				</form>
 
-				<input type="hidden" name="action" value="<?php echo esc_attr( $this->action_hook ); ?>"/>
+			</div>
 
-				<?php wp_nonce_field( $this->action_hook, $this->nonce_field ); ?>
+		<?php }
 
-				<?php submit_button( __( 'Save license key', 'backupwordpress' ) ); ?>
+		/**
+		 * Handles the license key form submission. Saves the license key.
+		 */
+		public function license_key_submit() {
 
-			</form>
+			check_admin_referer( $this->action_hook, $this->nonce_field );
 
-		</div>
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_safe_redirect( wp_get_referer() );
+				die;
+			}
 
-	<?php }
+			if ( empty( $_POST['license_key'] ) ) {
+				wp_safe_redirect( wp_get_referer() );
+				die;
+			}
+			$key = sanitize_text_field( $_POST['license_key'] );
 
-	/**
-	 * Handles the license key form submission. Saves the license key.
-	 */
-	public function license_key_submit() {
-
-		check_admin_referer( $this->action_hook, $this->nonce_field );
-
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_safe_redirect( wp_get_referer() );
-			die;
-		}
-
-		if ( empty( $_POST['license_key'] ) ) {
-			wp_safe_redirect( wp_get_referer() );
-			die;
-		}
-		$key = sanitize_text_field( $_POST['license_key'] );
-
-		// Clear any existing settings
-		$this->clear_settings();
-
-		Notices::get_instance()->clear_all_notices();
-
-		if ( $this->validate_key( $key ) ) {
-			$this->activate_license();
-		} else {
+			// Clear any existing settings
 			$this->clear_settings();
-		}
 
-		wp_safe_redirect( wp_get_referer() );
-		die;
+			Notices::get_instance()->clear_all_notices();
+
+			if ( $this->validate_key( $key ) ) {
+				$this->activate_license();
+			} else {
+				$this->clear_settings();
+			}
+
+			wp_safe_redirect( wp_get_referer() );
+			die;
+		}
 	}
 }
