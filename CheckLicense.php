@@ -172,7 +172,7 @@ class CheckLicense {
 
 		$is_first_activation = ( 0 === strlen( trim( $license_data['license_key'] ) ) );
 
-		$is_check_time = ( false === ( get_transient( 'hmbkp_daily_license_check' ) ) );
+		$is_check_time = ( false === ( get_site_transient( 'hmbkp_daily_license_check' ) ) );
 
 		if ( $is_first_activation || $is_check_time ) {
 
@@ -193,7 +193,7 @@ class CheckLicense {
 
 			$this->update_settings( array( 'license_key' => $key, 'license_status' => $license_data->license, 'license_expired' => $this->is_license_expired( $license_data->expires ), 'expiry_date' => $license_data->expires ) );
 
-			set_transient( 'hmbkp_daily_license_check', true, DAY_IN_SECONDS );
+			set_site_transient( 'hmbkp_daily_license_check', true, DAY_IN_SECONDS );
 
 		}
 
@@ -262,7 +262,7 @@ class CheckLicense {
 	 * @return mixed|void
 	 */
 	public function fetch_settings() {
-		return apply_filters( $this->plugin_settings, get_option( $this->plugin_settings, array( 'license_key' => '', 'license_status' => '', 'license_expired' => false, 'expiry_date' => '' ) ) );
+		return apply_filters( $this->plugin_settings, get_site_option( $this->plugin_settings, array( 'license_key' => '', 'license_status' => '', 'license_expired' => false, 'expiry_date' => '' ) ) );
 	}
 
 	/**
@@ -273,11 +273,11 @@ class CheckLicense {
 	 * @return bool
 	 */
 	protected function update_settings( $data = array() ) {
-		return update_option( $this->plugin_settings, $data );
+		return update_site_option( $this->plugin_settings, $data );
 	}
 
 	protected function clear_settings() {
-		return delete_option( $this->plugin_settings );
+		return delete_site_option( $this->plugin_settings );
 	}
 
 	/**
@@ -296,7 +296,9 @@ class CheckLicense {
 			return;
 		}
 
-		if ( $current_screen->id !== HMBKP_ADMIN_PAGE ) {
+		// TODO: remove suffix once it is added in BWP
+		$page = is_multisite() ? HMBKP_ADMIN_PAGE . '-network' : HMBKP_ADMIN_PAGE;
+		if ( $current_screen->id !== page ) {
 			return;
 		}
 
@@ -304,7 +306,7 @@ class CheckLicense {
 
 		<div class="updated">
 
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<form method="post" action="<?php echo esc_url( self_admin_url( 'admin-post.php' ) ); ?>">
 
 				<p>
 					<label style="vertical-align: baseline;" for="license_key"><?php printf( __( '%1$s%2$s is almost ready.%3$s Enter your license key to get updates and support.', 'backupwordpress' ), '<strong>', $this->edd_download_file_name, '</strong>' ); ?></label>
