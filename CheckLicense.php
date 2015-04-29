@@ -63,7 +63,7 @@ class CheckLicense {
 
 		if ( ( empty( $settings['license_key'] ) ) || false === $this->validate_key( $settings['license_key'] ) ) {
 
-			add_action( 'admin_notices', array( $this, 'display_license_form' ) );
+			add_action( 'all_admin_notices', array( $this, 'display_license_form' ) );
 
 		}
 
