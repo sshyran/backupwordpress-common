@@ -316,7 +316,7 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 
 			// TODO: remove suffix once it is added in BWP
 			$page = is_multisite() ? HMBKP_ADMIN_PAGE . '-network' : HMBKP_ADMIN_PAGE;
-			if ( $current_screen->id !== page ) {
+			if ( $current_screen->id !== $page ) {
 				return;
 			}
 
