@@ -105,4 +105,11 @@ class Addon {
 		return true;
 	}
 
+	public function deactivate() {
+
+		delete_site_option( 'hmbkpp_rsc_settings' );
+		delete_site_transient( 'hmbkp_license_data_rsc' );
+
+	}
+
 }
