@@ -1,4 +1,8 @@
-<?php namespace HM\BackUpWordPress;
+<?php
+/**
+ * Version 0.2.9 - 2015-05-27
+ */
+namespace HM\BackUpWordPress;
 
 use HM\BackUpWordPress\Notices;
 
