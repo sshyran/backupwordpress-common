@@ -119,9 +119,11 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 
 			$notices = array();
 
-			if ( $this->is_license_invalid( $license_data['license_status'] ) ) {
+		if ( is_wp_error( $license_data ) ) {
+			$notices[] = sprintf( __( '%s was unable to validate your license key. ( %ss )', 'backupwordpress' ), $this->edd_download_file_name, $license_data->get_error_message() );
+			} elseif ( $this->is_license_invalid( $license_data['license_status'] ) ) {
 				$notices[] = sprintf( __( 'Your %s license is invalid, please double check it now to continue to receive updates and support. Thanks!', 'backupwordpress' ), $this->edd_download_file_name );
-			}  elseif ( $this->is_license_expired( $license_data['expiry_date'] ) ) {
+			} elseif ( $this->is_license_expired( $license_data['expiry_date'] ) ) {
 				$notices[] = sprintf( __( 'Your %s license expired on %s, renew it now to continue to receive updates and support. Thanks!', 'backupwordpress' ), $this->edd_download_file_name, $license_data['expiry_date'] );
 			}
 
@@ -204,7 +206,7 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 				$response = wp_remote_get( $this->get_api_url( $api_params ), array( 'timeout' => 15, 'sslverify' => false ) );
 
 				if ( is_wp_error( $response ) ) {
-					return false;
+					return $response;
 				}
 
 				$license_data = json_decode( wp_remote_retrieve_body( $response ) );
