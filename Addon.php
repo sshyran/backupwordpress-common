@@ -30,7 +30,7 @@ class Addon {
 	 * @param $min_bwp_version
 	 * @param $license_status
 	 */
-	public function __construct( $plugin_version, $min_bwp_version, $service_class, $edd_download_file_name ) {
+	public function __construct( $plugin_version, $min_bwp_version, $service_class, $edd_download_file_name, $plugin_name, $plugin_settings ) {
 
 		add_action( 'admin_init', array( $this, 'maybe_self_deactivate' ) );
 
@@ -38,6 +38,9 @@ class Addon {
 		$this->min_bwp_version = $min_bwp_version;
 		$this->service_class = $service_class;
 		$this->edd_download_file_name = $edd_download_file_name;
+		$this->plugin_name = $plugin_name;
+		$this->plugin_settings = $plugin_settings;
+
 	}
 
 	public function __get( $property ) {
@@ -53,7 +56,7 @@ class Addon {
 			return;
 		}
 
-		deactivate_plugins( 'backupwordpress-pro-dreamobjects/backupwordpress-pro-dreamobjects.php' );
+		deactivate_plugins( 'backupwordpress-pro-' . $this->plugin_name . '/backupwordpress-pro-' . $this->plugin_name . '.php' );
 		add_action( 'admin_notices', array( $this, 'display_admin_notices' ) );
 
 		if ( isset( $_GET['activate'] ) ) {
@@ -107,8 +110,7 @@ class Addon {
 
 	public function deactivate() {
 
-		delete_site_option( 'hmbkpp_rsc_settings' );
-		delete_site_transient( 'hmbkp_license_data_rsc' );
+		delete_site_option( $this->plugin_settings );
 
 	}
 

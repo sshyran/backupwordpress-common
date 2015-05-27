@@ -1,6 +1,6 @@
 <?php
 /**
- * Version 0.2.9 - 2015-05-27
+ * Version 0.2.9.1 - 2015-05-27
  */
 namespace HM\BackUpWordPress;
 
@@ -265,6 +265,9 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 
 			// make sure the response came back okay
 			if ( is_wp_error( $response ) ) {
+				$notices[] = sprintf( __( '%s was unable to validate your license key. ( %ss )', 'backupwordpress' ), $this->edd_download_file_name, $response->get_error_message() );
+				Notices::get_instance()->set_notices( 'license_check', $notices );
+
 				return false;
 			}
 
