@@ -49,8 +49,8 @@ class Addon {
 		$this->service_class = $service_class;
 		$this->edd_download_file_name = $edd_download_file_name;
 		$this->plugin_name = $plugin_name;
-		$this->plugin_settings = $plugin_settings_key;
-		$this->plugin_settings = $plugin_settings_defaults;
+		$this->plugin_settings_key = $plugin_settings_key;
+		$this->plugin_settings_defaults = $plugin_settings_defaults;
 
 	}
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Version 0.2.9.2 - 2015-05-28
+ * Version 0.2.9.4 - 2015-05-28
  */
 namespace HM\BackUpWordPress;
 
@@ -48,7 +48,7 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 
 			add_action( 'backupwordpress_loaded', array( $this, 'init' ) );
 
-			$this->plugin_settings = $plugin_settings_key;
+			$this->plugin_settings_key = $plugin_settings_key;
 			$this->plugin_settings_defaults = $plugin_settings_defaults;
 			$this->edd_download_file_name = $edd_download_file_name;
 
@@ -302,11 +302,11 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 		 * @return bool
 		 */
 		protected function update_settings( $data = array() ) {
-			return update_site_option( $this->plugin_settings, $data );
+			return update_site_option( $this->plugin_settings_key, $data );
 		}
 
 		protected function clear_settings() {
-			return delete_site_option( $this->plugin_settings );
+			return delete_site_option( $this->plugin_settings_key );
 		}
 
 		/**
