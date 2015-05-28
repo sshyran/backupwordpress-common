@@ -23,14 +23,24 @@ class Addon {
 
 	protected $edd_download_file_name = '';
 
+	protected $plugin_name;
+
+	protected $plugin_settings_key;
+
+	protected $plugin_settings_defaults;
+
 	/**
-	 * Instantiates a new Plugin object
+	 * Instantiates a new Addon object.
 	 *
 	 * @param $plugin_version
 	 * @param $min_bwp_version
-	 * @param $license_status
+	 * @param $service_class
+	 * @param $edd_download_file_name
+	 * @param $plugin_name
+	 * @param $plugin_settings_key
+	 * @param $plugin_settings_defaults
 	 */
-	public function __construct( $plugin_version, $min_bwp_version, $service_class, $edd_download_file_name, $plugin_name, $plugin_settings ) {
+	public function __construct( $plugin_version, $min_bwp_version, $service_class, $edd_download_file_name, $plugin_name, $plugin_settings_key, $plugin_settings_defaults ) {
 
 		add_action( 'admin_init', array( $this, 'maybe_self_deactivate' ) );
 
@@ -39,7 +49,8 @@ class Addon {
 		$this->service_class = $service_class;
 		$this->edd_download_file_name = $edd_download_file_name;
 		$this->plugin_name = $plugin_name;
-		$this->plugin_settings = $plugin_settings;
+		$this->plugin_settings = $plugin_settings_key;
+		$this->plugin_settings = $plugin_settings_defaults;
 
 	}
 
@@ -110,8 +121,8 @@ class Addon {
 
 	public function deactivate() {
 
-		delete_site_option( $this->plugin_settings );
-
+		delete_site_option( $this->plugin_settings_key );
+		delete_site_transient( 'hmbkp_daily_license_check' . '_' . $this->plugin_name );
 	}
 
 }

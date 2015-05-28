@@ -1,10 +1,8 @@
 <?php
 /**
- * Version 0.2.9.1 - 2015-05-27
+ * Version 0.2.9.2 - 2015-05-28
  */
 namespace HM\BackUpWordPress;
-
-use HM\BackUpWordPress\Notices;
 
 if ( ! class_exists( 'CheckLicense' ) ) {
 	/**
@@ -22,7 +20,9 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 		 */
 		const EDD_PLUGIN_AUTHOR = 'Human Made Limited';
 
-		protected $plugin_settings = '';
+		protected $plugin_settings_key = '';
+
+		protected $plugin_settings_defaults = '';
 
 		protected $edd_download_file_name = '';
 
@@ -37,17 +37,19 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 		/**
 		 * Instantiate a new object.
 		 *
-		 * @param $plugin_settings
+		 * @param $plugin_settings_key
+		 * @param $plugin_settings_defaults
 		 * @param $edd_download_file_name
 		 * @param Addon $plugin
 		 * @param PluginUpdater $updater
 		 * @param $prefix
 		 */
-		public function __construct( $plugin_settings, $edd_download_file_name, Addon $plugin, PluginUpdater $updater, $prefix ) {
+		public function __construct( $plugin_settings_key, $plugin_settings_defaults, $edd_download_file_name, Addon $plugin, PluginUpdater $updater, $prefix ) {
 
 			add_action( 'backupwordpress_loaded', array( $this, 'init' ) );
 
-			$this->plugin_settings = $plugin_settings;
+			$this->plugin_settings = $plugin_settings_key;
+			$this->plugin_settings_defaults = $plugin_settings_defaults;
 			$this->edd_download_file_name = $edd_download_file_name;
 
 			$this->plugin = $plugin;
@@ -265,7 +267,7 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 
 			// make sure the response came back okay
 			if ( is_wp_error( $response ) ) {
-				$notices[] = sprintf( __( '%s was unable to validate your license key. ( %ss )', 'backupwordpress' ), $this->edd_download_file_name, $response->get_error_message() );
+				$notices[] = sprintf( __( '%s was unable to validate your license key. ( %s )', 'backupwordpress' ), $this->edd_download_file_name, $response->get_error_message() );
 				Notices::get_instance()->set_notices( 'license_check', $notices );
 
 				return false;
@@ -289,7 +291,7 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 		 * @return mixed|void
 		 */
 		public function fetch_settings() {
-			return apply_filters( $this->plugin_settings, get_site_option( $this->plugin_settings, array( 'license_key' => '', 'license_status' => '', 'license_expired' => false, 'expiry_date' => '' ) ) );
+			return get_site_option( $this->plugin_settings_key, $this->plugin_settings_defaults );
 		}
 
 		/**
