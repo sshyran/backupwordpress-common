@@ -1,6 +1,6 @@
 <?php
 /**
- * Version 0.2.9.4 - 2015-05-28
+ * Version 0.2.9.5 - 2015-06-01
  */
 namespace HM\BackUpWordPress;
 
@@ -126,7 +126,7 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 			$notices = array();
 
 		if ( is_wp_error( $license_data ) ) {
-			$notices[] = sprintf( __( '%s was unable to validate your license key. ( %ss )', 'backupwordpress' ), $this->edd_download_file_name, $license_data->get_error_message() );
+			$notices[] = sprintf( __( '%s was unable to validate your license key. ( %s )', 'backupwordpress' ), $this->edd_download_file_name, $license_data->get_error_message() );
 			} elseif ( $this->is_license_invalid( $license_data['license_status'] ) ) {
 				$notices[] = sprintf( __( 'Your %s license is invalid, please double check it now to continue to receive updates and support. Thanks!', 'backupwordpress' ), $this->edd_download_file_name );
 			} elseif ( $this->is_license_expired( $license_data['expiry_date'] ) ) {
@@ -213,6 +213,8 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 
 				if ( is_wp_error( $response ) ) {
 					return $response;
+				} elseif ( 200 !== $response['response']['code'] ) {
+					return new \WP_Error( 'hmbkp-response-error', $response['response']['code'] . ' ' . $response['response']['message'] );
 				}
 
 				$license_data = json_decode( wp_remote_retrieve_body( $response ) );
@@ -267,10 +269,9 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 
 			// make sure the response came back okay
 			if ( is_wp_error( $response ) ) {
-				$notices[] = sprintf( __( '%s was unable to validate your license key. ( %s )', 'backupwordpress' ), $this->edd_download_file_name, $response->get_error_message() );
-				Notices::get_instance()->set_notices( 'license_check', $notices );
-
-				return false;
+				return $response;
+			} elseif ( 200 !== $response['response']['code'] ) {
+				return new \WP_Error( 'hmbkp-response-error', $response['response']['code'] . ' ' . $response['response']['message'] );
 			}
 
 			// decode the license data
@@ -379,7 +380,11 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 			Notices::get_instance()->clear_all_notices();
 
 			if ( $this->validate_key( $key ) ) {
-				$this->activate_license();
+				$result = $this->activate_license();
+				if ( is_wp_error( $result ) ) {
+					Notices::get_instance()->set_notices( 'license_activation', array( sprintf( __( 'Unable to activate license: ( %s )', 'backupwordpress' ), $result->get_error_message() ) ) );
+
+				}
 			} else {
 				$this->clear_settings();
 			}
