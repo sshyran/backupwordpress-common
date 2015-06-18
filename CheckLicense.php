@@ -1,6 +1,6 @@
 <?php
 /**
- * Version 0.2.9.5 - 2015-06-01
+ * Version 0.2.9.6 - 2015-06-18
  */
 namespace HM\BackUpWordPress;
 
@@ -336,7 +336,7 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 
 			<div class="updated">
 
-				<form method="post" action="<?php echo esc_url( self_admin_url( 'admin-post.php' ) ); ?>">
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 
 					<p>
 						<label style="vertical-align: baseline;" for="license_key"><?php printf( __( '%1$s%2$s is almost ready.%3$s Enter your license key to get updates and support.', 'backupwordpress' ), '<strong>', $this->edd_download_file_name, '</strong>' ); ?></label>
