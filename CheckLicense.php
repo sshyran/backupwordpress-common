@@ -1,6 +1,6 @@
 <?php
 /**
- * Version 0.2.9.7 - 2015-06-23
+ * Version 0.2.9.8 - 2015-07-02
  */
 namespace HM\BackUpWordPress;
 
@@ -307,12 +307,24 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 			return update_site_option( $this->plugin_settings_key, $settings );
 		}
 
+		/**
+		 * Delete plugin settings
+		 * 
+		 * @return bool|void
+		 */
 		protected function clear_settings() {
+
 			$settings = get_site_option( $this->plugin_settings_key );
+
+			if ( ! $settings ) {
+				return;
+			}
+
 			unset( $settings['license_key'] );
 			unset( $settings['license_status'] );
 			unset( $settings['license_expired'] );
 			unset( $settings['expiry_date'] );
+
 			return update_site_option( $this->plugin_settings_key, $settings );
 		}
 
