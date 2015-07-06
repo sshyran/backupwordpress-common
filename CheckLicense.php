@@ -1,6 +1,6 @@
 <?php
 /**
- * Version 0.2.9.8 - 2015-07-02
+ * Version 0.2.9.9 - 2015-07-06
  */
 namespace HM\BackUpWordPress;
 
@@ -303,7 +303,7 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 		 * @return bool
 		 */
 		protected function update_settings( $data = array() ) {
-			$settings = array_merge( get_site_option( $this->plugin_settings_key ), $data );
+			$settings = array_merge( get_site_option( $this->plugin_settings_key, $this->plugin_settings_defaults ), $data );
 			return update_site_option( $this->plugin_settings_key, $settings );
 		}
 
