@@ -1,6 +1,6 @@
 <?php
 /**
- * Version 0.2.9.9 - 2015-07-06
+ * Version 0.3.0 - 2015-07-27
  */
 namespace HM\BackUpWordPress;
 
@@ -46,6 +46,8 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 		 */
 		public function __construct( $plugin_settings_key, $plugin_settings_defaults, $edd_download_file_name, Addon $plugin, PluginUpdater $updater, $prefix ) {
 
+			add_action( 'admin_init', array( $this, 'plugin_updater' ) );
+			
 			add_action( 'backupwordpress_loaded', array( $this, 'init' ) );
 
 			$this->plugin_settings_key = $plugin_settings_key;
@@ -100,6 +102,10 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 			$settings = $this->fetch_settings();
 
 			$license_key = $settings['license_key'];
+
+			if ( empty( $license_key ) ) {
+				return;
+			}
 
 			// Setup the updater
 			$this->updater->init( self::EDD_STORE_URL, __FILE__, array(
