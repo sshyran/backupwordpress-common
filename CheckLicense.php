@@ -1,6 +1,6 @@
 <?php
 /**
- * Version 0.3.0 - 2015-07-27
+ * Version 0.3.0.1 - 2015-07-27
  */
 namespace HM\BackUpWordPress;
 
@@ -96,7 +96,7 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 		/**
 		 * Sets up the EDD licensing check.
 		 */
-		protected function plugin_updater() {
+		public function plugin_updater() {
 
 			// Retrieve our license key from the DB
 			$settings = $this->fetch_settings();
