@@ -1,6 +1,6 @@
 <?php
 /**
- * Version 0.3.0.1 - 2015-07-27
+ * Version 0.3.0.2 - 2015-07-28
  */
 namespace HM\BackUpWordPress;
 
@@ -44,9 +44,7 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 		 * @param PluginUpdater $updater
 		 * @param $prefix
 		 */
-		public function __construct( $plugin_settings_key, $plugin_settings_defaults, $edd_download_file_name, Addon $plugin, PluginUpdater $updater, $prefix ) {
-
-			add_action( 'admin_init', array( $this, 'plugin_updater' ) );
+		public function __construct( $plugin_settings_key, $plugin_settings_defaults, $edd_download_file_name, Addon $plugin, $prefix ) {
 			
 			add_action( 'backupwordpress_loaded', array( $this, 'init' ) );
 
@@ -55,8 +53,6 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 			$this->edd_download_file_name = $edd_download_file_name;
 
 			$this->plugin = $plugin;
-
-			$this->updater = $updater;
 
 			$this->prefix = $prefix;
 
@@ -90,31 +86,6 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 			}
 
 			add_action( 'admin_post_' . $this->action_hook, array( $this, 'license_key_submit' ) );
-
-		}
-
-		/**
-		 * Sets up the EDD licensing check.
-		 */
-		public function plugin_updater() {
-
-			// Retrieve our license key from the DB
-			$settings = $this->fetch_settings();
-
-			$license_key = $settings['license_key'];
-
-			if ( empty( $license_key ) ) {
-				return;
-			}
-
-			// Setup the updater
-			$this->updater->init( self::EDD_STORE_URL, __FILE__, array(
-					'version'   => $this->plugin->plugin_version, // current version number
-					'license'   => $license_key, // license key (used get_option above to retrieve from DB)
-					'item_name' => $this->edd_download_file_name, // name of this plugin
-					'author'    => self::EDD_PLUGIN_AUTHOR, // author of this plugin
-				)
-			);
 
 		}
 
