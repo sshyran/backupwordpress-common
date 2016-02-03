@@ -1,6 +1,6 @@
 <?php
 /**
- * Version 0.3.0.2 - 2015-07-28
+ * Version 0.3.0.3 - 2016-02-03
  */
 namespace HM\BackUpWordPress;
 
@@ -186,7 +186,7 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 				);
 
 				// Call the custom API.
-				$response = wp_remote_get( $this->get_api_url( $api_params ), array( 'timeout' => 15, 'sslverify' => false ) );
+				$response = wp_remote_get( $this->get_api_url( $api_params ), array( 'timeout' => 15, 'sslverify' => true ) );
 
 				if ( is_wp_error( $response ) ) {
 					return $response;
@@ -242,7 +242,7 @@ if ( ! class_exists( 'CheckLicense' ) ) {
 			);
 
 			// Call the custom API.
-			$response = wp_remote_get( $this->get_api_url( $api_params ), array( 'timeout'   => 15, 'sslverify' => false ) );
+			$response = wp_remote_get( $this->get_api_url( $api_params ), array( 'timeout'   => 15, 'sslverify' => true ) );
 
 			// make sure the response came back okay
 			if ( is_wp_error( $response ) ) {
