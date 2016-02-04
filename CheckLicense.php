@@ -1,6 +1,6 @@
 <?php
 /**
- * Version 0.3.0.3 - 2016-02-03
+ * Version 0.3.0.4 - 2016-02-03
  */
 namespace HM\BackUpWordPress;
 
